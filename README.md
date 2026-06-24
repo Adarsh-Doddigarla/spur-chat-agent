@@ -43,6 +43,12 @@ cp .env.example .env
 cd ../backend
 npx prisma migrate dev
 
+# This creates two tables:
+#   - Conversation (id, channel, createdAt, updatedAt)  
+#   - Message (id, conversationId, sender, text, createdAt)
+#
+# No seed required — data is created automatically when users chat.
+
 # 7. Start the backend  ->  http://localhost:3000
 npm run dev
 
