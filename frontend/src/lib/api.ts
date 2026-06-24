@@ -2,6 +2,16 @@ import type { Message } from "./types";
 
 const API_URL: string = import.meta.env.VITE_API_URL;
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 export interface PostMessageResponse {
   reply: string;
   sessionId: string;
@@ -43,7 +53,7 @@ export async function postMessage({
   });
 
   if (!res.ok) {
-    throw new Error(await extractError(res));
+    throw new ApiError(await extractError(res), res.status);
   }
 
   return res.json() as Promise<PostMessageResponse>;
@@ -53,7 +63,7 @@ export async function getHistory(sessionId: string): Promise<GetHistoryResponse>
   const res = await fetch(`${API_URL}/chat/${sessionId}/messages`);
 
   if (!res.ok) {
-    throw new Error(await extractError(res));
+    throw new ApiError(await extractError(res), res.status);
   }
 
   return res.json() as Promise<GetHistoryResponse>;

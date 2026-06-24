@@ -11,7 +11,8 @@ const router = Router();
 router.post("/message", async (req, res) => {
   const parsed = chatMessageSchema.safeParse(req.body);
   if (!parsed.success) {
-    throw new ValidationError(parsed.error.issues[0].message);
+    const [firstIssue] = parsed.error.issues;
+    throw new ValidationError(firstIssue?.message ?? "Invalid request.");
   }
 
   const { message, sessionId } = parsed.data;

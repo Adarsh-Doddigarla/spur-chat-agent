@@ -26,7 +26,7 @@
     on:keydown={handleKeydown}
     {disabled}
     rows={1}
-    placeholder="Type a message..."
+    placeholder={disabled ? "Sending..." : "Type a message..."}
   ></textarea>
   <button on:click={handleSend} {disabled} aria-label="Send">&#10148;</button>
 </div>
