@@ -26,13 +26,19 @@
 <style>
   .list {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: 12px;
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
     background: #f9fafb;
     scroll-behavior: smooth;
+  }
+
+  /* Anchor messages to the bottom while keeping the top scrollable.
+     (justify-content: flex-end would clip overflowing messages at the top.) */
+  .list > :first-child {
+    margin-top: auto;
   }
 
   .list::-webkit-scrollbar { width: 4px; }

@@ -67,11 +67,12 @@ npm run dev
 | `PORT` | Port the Express API listens on | No | `3000` |
 | `ALLOWED_ORIGIN` | CORS origin allowed to call the API (the frontend URL) | Yes | - |
 | `DATABASE_URL` | PostgreSQL connection string | Yes | - |
-| `LLM_PROVIDER` | Provider label (the active provider is wired in `llm/index.ts`) | No | `openai` |
-| `LLM_MODEL` | Model name for the OpenAI provider (the Groq provider pins its own model) | No | `gpt-4o-mini` |
-| `GROQ_API_KEY` | API key for the active Groq provider | Yes | - |
-| `OPENAI_API_KEY` | API key for the OpenAI provider (optional; only used if you swap to it) | No | - |
-| `LLM_TIMEOUT_MS` | Request timeout in ms (OpenAI provider) | No | `20000` |
+| `LLM_PROVIDER` | Active LLM provider: groq \| openai \| gemini | No | `groq` |
+| `LLM_MODEL` | Model name for the active provider | No | `llama-3.3-70b-versatile` |
+| `GROQ_API_KEY` | API key for Groq | If LLM_PROVIDER=groq | - |
+| `OPENAI_API_KEY` | API key for OpenAI | If LLM_PROVIDER=openai | - |
+| `GEMINI_API_KEY` | API key for Google Gemini | If LLM_PROVIDER=gemini | - |
+| `LLM_TIMEOUT_MS` | Request timeout in ms (all providers) | No | `20000` |
 | `LLM_MAX_OUTPUT_TOKENS` | Max tokens in the model's reply (cost cap) | No | `400` |
 | `LLM_MAX_HISTORY` | Max past messages sent as context (cost cap) | No | `12` |
 | `MAX_MESSAGE_LENGTH` | Max characters allowed per user message | No | `2000` |
@@ -82,7 +83,37 @@ npm run dev
 | --- | --- | --- | --- |
 | `VITE_API_URL` | Base URL of the backend API | Yes | `http://localhost:3000` |
 
-> `GROQ_API_KEY` powers replies (the live provider is Groq) and is validated as **required** at boot. `OPENAI_API_KEY` and `GEMINI_API_KEY` are optional - set them only if you swap `llm/index.ts` to those providers.
+---
+
+## Switching LLM Providers
+
+Switching providers requires only `.env` changes - no code edits needed.
+
+**Groq** (default, free - https://console.groq.com):
+
+```bash
+LLM_PROVIDER=groq
+LLM_MODEL=llama-3.3-70b-versatile
+GROQ_API_KEY=gsk_...
+```
+
+**OpenAI** (https://platform.openai.com/api-keys):
+
+```bash
+LLM_PROVIDER=openai
+LLM_MODEL=gpt-4o-mini
+OPENAI_API_KEY=sk-...
+```
+
+**Google Gemini** (https://aistudio.google.com/apikey):
+
+```bash
+LLM_PROVIDER=gemini
+LLM_MODEL=gemini-2.5-flash
+GEMINI_API_KEY=AIza...
+```
+
+`llm/index.ts` reads `LLM_PROVIDER` at startup and instantiates the correct provider. The rest of the app is unaware of which provider is active.
 
 ---
 
@@ -117,7 +148,7 @@ backend/src/
 
 ## LLM Notes
 
-- **Provider:** Groq running `llama-3.3-70b-versatile`, accessed through the OpenAI SDK pointed at `https://api.groq.com/openai/v1` (Groq is OpenAI-API-compatible, so no separate client).
+- **Providers:** three are supported - **Groq** (`llama-3.3-70b-versatile`, via the OpenAI-compatible SDK at `https://api.groq.com/openai/v1`), **OpenAI** (`gpt-4o-mini`), and **Google Gemini** (`gemini-2.5-flash`). The active provider is selected via `LLM_PROVIDER` in `.env`. All three implement the same `LLMProvider` interface.
 - **Prompt strategy** (`llm/prompt.ts`): each request is assembled as
   1. a **system prompt** defining the support persona, concatenated with
   2. **`STORE_KNOWLEDGE`** - shipping, returns, and support-hours facts for Northwind Goods,
@@ -133,7 +164,7 @@ backend/src/
   | `LLM_MAX_HISTORY` | `12` | Bounds how many past messages become context |
   | `LLM_MAX_OUTPUT_TOKENS` | `400` | Caps tokens in each model reply |
 
-- **Why Groq:** generous free tier, **no credit card required**, and an OpenAI-compatible API - so it's a drop-in for development and the provider can be swapped later by changing one file.
+- **Why Groq:** generous free tier, **no credit card required**, and an OpenAI-compatible API - so it's a drop-in for development, and providers can be swapped later via a one-line `.env` change.
 
 ---
 
