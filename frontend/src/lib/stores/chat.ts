@@ -1,5 +1,8 @@
 import { writable } from "svelte/store";
 import type { Message, ChatState } from "../types";
+import { postMessage, getHistory } from "../api";
+
+const SESSION_KEY = "sessionId";
 
 const initialState: ChatState = {
   messages: [],
@@ -17,26 +20,61 @@ export async function sendMessage(text: string): Promise<void> {
     createdAt: new Date().toISOString(),
   };
 
-  chatStore.update((s) => ({
-    ...s,
-    status: "sending",
-    messages: [...s.messages, userMessage],
-  }));
+  let currentSessionId: string | null = null;
+  chatStore.update((s) => {
+    currentSessionId = s.sessionId;
+    return {
+      ...s,
+      status: "sending",
+      messages: [...s.messages, userMessage],
+    };
+  });
 
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  try {
+    const { reply, sessionId } = await postMessage({
+      message: text,
+      sessionId: currentSessionId,
+    });
 
-  const aiMessage: Message = {
-    id: crypto.randomUUID(),
-    sender: "ai",
-    text: "This is a mock reply.",
-    createdAt: new Date().toISOString(),
-  };
+    const aiMessage: Message = {
+      id: crypto.randomUUID(),
+      sender: "ai",
+      text: reply,
+      createdAt: new Date().toISOString(),
+    };
 
-  chatStore.update((s) => ({
-    ...s,
-    status: "idle",
-    messages: [...s.messages, aiMessage],
-  }));
+    localStorage.setItem(SESSION_KEY, sessionId);
+
+    chatStore.update((s) => ({
+      ...s,
+      sessionId,
+      messages: [...s.messages, aiMessage],
+    }));
+  } catch {
+    const errorMessage: Message = {
+      id: crypto.randomUUID(),
+      sender: "ai",
+      text: "Sorry, something went wrong. Please try again.",
+      createdAt: new Date().toISOString(),
+    };
+
+    chatStore.update((s) => ({
+      ...s,
+      messages: [...s.messages, errorMessage],
+    }));
+  } finally {
+    chatStore.update((s) => ({ ...s, status: "idle" }));
+  }
 }
 
-export async function loadHistory(): Promise<void> {}
+export async function loadHistory(): Promise<void> {
+  const sessionId = localStorage.getItem(SESSION_KEY);
+  if (!sessionId) return;
+
+  try {
+    const { messages } = await getHistory(sessionId);
+    chatStore.update((s) => ({ ...s, messages, sessionId }));
+  } catch {
+    localStorage.removeItem(SESSION_KEY);
+  }
+}
