@@ -196,4 +196,6 @@ backend/src/
 
 URL -  https://spur-chat-agent-one.vercel.app
 
+> **Note:** The backend is hosted on Render's free tier and may take 20-30 seconds to respond after a period of inactivity (cold start). Subsequent messages will be fast.
+
 
