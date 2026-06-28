@@ -194,4 +194,6 @@ backend/src/
 
 ## Deployed URL
 
-Coming soon - deploying to Render + Vercel.
+URL -  https://spur-chat-agent-one.vercel.app
+
+
